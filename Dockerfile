@@ -1,8 +1,13 @@
-FROM openjdk:11-jre-slim
+# Packaging de l'application Spring avec Maven
+FROM maven:3.8.1-openjdk-11-slim AS MAVEN_PACKAGE
+COPY pom.xml /tmp/
+COPY src /tmp/src/
+WORKDIR /tmp
+RUN mvn package
 
-EXPOSE 8080
-
-COPY ./target/demo-0.0.1-SNAPSHOT.jar /usr/app
-WORKDIR /usr/app
-
-CMD ["java","-jar","demo-0.0.1-SNAPSHOT.jar"]
+# Transfert du .jar vers une image Java
+FROM openjdk:11-jdk-slim
+WORKDIR /app
+ARG JAR_FILE=/tmp/target/*.jar
+COPY --from=MAVEN_PACKAGE ${JAR_FILE} app.jar
+ENTRYPOINT [ "java", "-jar", "app.jar" ]
